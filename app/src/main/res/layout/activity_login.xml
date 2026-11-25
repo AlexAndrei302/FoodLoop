@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="#FFFFFF">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:padding="24dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="FoodLoop"
+            android:textSize="36sp"
+            android:textStyle="bold"
+            android:textColor="#2E7D32"
+            android:layout_marginTop="64dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Weniger verschwenden. Mehr genießen."
+            android:textSize="14sp"
+            android:textColor="#757575"
+            android:layout_marginBottom="48dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Willkommen zurück!"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:textColor="#212121"
+            android:layout_marginBottom="8dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Melde dich bei deinem Konto an."
+            android:textColor="#757575"
+            android:textSize="14sp"
+            android:layout_marginBottom="24dp"/>
+
+        <EditText
+            android:id="@+id/etLoginEmail"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:hint="E-Mail-Adresse"
+            android:inputType="textEmailAddress"
+            android:textColor="#212121"
+            android:textColorHint="#757575"
+            android:layout_marginBottom="16dp"/>
+
+        <EditText
+            android:id="@+id/etLoginPassword"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:hint="Passwort"
+            android:inputType="textPassword"
+            android:textColor="#212121"
+            android:textColorHint="#757575"
+            android:layout_marginBottom="8dp"/>
+
+        <TextView
+            android:id="@+id/tvForgotPassword"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Passwort vergessen?"
+            android:textColor="#2E7D32"
+            android:gravity="end"
+            android:padding="12dp"
+            android:layout_marginBottom="16dp"/>
+
+        <Button
+            android:id="@+id/btnLogin"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="Anmelden"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#2E7D32"
+            android:textSize="16sp"
+            android:textAllCaps="false"/>
+
+        <ProgressBar
+            android:id="@+id/loginProgressBar"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginTop="16dp"
+            android:visibility="gone"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ODER"
+            android:textColor="#757575"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="16dp"/>
+
+        <Button
+            android:id="@+id/btnGoogleLogin"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="Mit Google anmelden"
+            android:textColor="#212121"
+            android:backgroundTint="#EEEEEE"
+            android:textAllCaps="false"
+            android:enabled="false"/>
+
+        <TextView
+            android:id="@+id/tvRegister"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Noch kein Konto? Registrieren"
+            android:textColor="#2E7D32"
+            android:textSize="14sp"
+            android:layout_marginTop="24dp"
+            android:padding="12dp"/>
+
+    </LinearLayout>
+
+</ScrollView>

@@ -1,6 +1,9 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.ksp)
+
+    //Firebase
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -56,4 +59,26 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
+
+
+    // Firebase Bill of Materials
+    implementation(platform("com.google.firebase:firebase-bom:34.0.0"))
+
+    // Firebase Authentication
+    implementation("com.google.firebase:firebase-auth")
+
+    // Cloud Firestore
+    implementation("com.google.firebase:firebase-firestore")
+
+    // CameraX
+    val cameraVersion = "1.4.2"
+
+    implementation("androidx.camera:camera-core:$cameraVersion")
+    implementation("androidx.camera:camera-camera2:$cameraVersion")
+    implementation("androidx.camera:camera-lifecycle:$cameraVersion")
+    implementation("androidx.camera:camera-view:$cameraVersion")
+
+// Google ML Kit - Text Recognition
+    implementation("com.google.mlkit:text-recognition:16.0.1")
+
 }

@@ -21,6 +21,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Locale
+import android.content.Intent
+import com.example.foodloop.scanner.ScanActivity
 
 class PantryFragment : Fragment(R.layout.fragment_pantry) {
 
@@ -29,6 +31,7 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
     private val foodDao by lazy {
         FoodDatabase.getDatabase(requireContext()).foodDao()
     }
+
 
     override fun onViewCreated(
         view: View,
@@ -41,11 +44,25 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
         val addButton: Button =
             view.findViewById(R.id.btn_add_food)
 
+        val scanButton: Button =
+            view.findViewById(R.id.btn_scan_food)
+
         addButton.setOnClickListener {
             showFoodDialog()
         }
 
+        scanButton.setOnClickListener {
+
+            val intent = Intent(
+                requireContext(),
+                ScanActivity::class.java
+            )
+
+            startActivity(intent)
+        }
+
         viewLifecycleOwner.lifecycleScope.launch {
+
             viewLifecycleOwner.repeatOnLifecycle(
                 Lifecycle.State.STARTED
             ) {
@@ -55,6 +72,7 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
             }
         }
     }
+
 
     private fun displayFoods(foods: List<Food>) {
 

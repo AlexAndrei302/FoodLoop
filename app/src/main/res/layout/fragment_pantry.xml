@@ -44,4 +44,15 @@
         android:text="+ Lebensmittel hinzufügen"
         android:layout_marginTop="12dp"/>
 
+    <Button
+        android:id="@+id/btn_scan_food"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Produkt scannen"
+        android:textColor="#FFFFFF"
+        android:backgroundTint="#2E7D32"
+        android:drawableStart="@android:drawable/ic_menu_camera"
+        android:drawableTint="#FFFFFF"
+        android:layout_marginTop="4dp"/>
+
 </LinearLayout>
