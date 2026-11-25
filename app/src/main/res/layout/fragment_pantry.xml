@@ -1,33 +1,221 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp"
-    android:background="#F5F9F5">
+    android:padding="12dp"
+    android:background="@color/foodloop_background">
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Mein Vorrat"
-        android:textSize="28sp"
+        android:textSize="24sp"
         android:textStyle="bold"
-        android:textColor="#2E7D32"
-        android:layout_marginBottom="12dp"/>
+        android:textColor="@color/foodloop_primary"
+        android:layout_marginBottom="8dp"/>
 
-    <TextView
+    <!-- KOMPAKTE STATISTIK -->
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Meine Lebensmittel"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="12dp"/>
+        android:orientation="horizontal"
+        android:layout_marginBottom="10dp">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="4dp"
+            android:background="@color/foodloop_primary_light">
+
+            <TextView
+                android:id="@+id/txt_total_foods"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/foodloop_primary"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Produkte"
+                android:textSize="11sp"
+                android:textColor="@color/foodloop_primary"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="6dp"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="4dp"
+            android:background="@color/foodloop_warning_light">
+
+            <TextView
+                android:id="@+id/txt_expiring_foods"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/foodloop_warning"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Bald ablaufend"
+                android:textSize="11sp"
+                android:textColor="@color/foodloop_warning"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="6dp"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="4dp"
+            android:background="@color/foodloop_error_light">
+
+            <TextView
+                android:id="@+id/txt_expired_foods"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/foodloop_error"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Abgelaufen"
+                android:textSize="11sp"
+                android:textColor="@color/foodloop_error"/>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- SUCHE UND FILTER -->
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <EditText
+            android:id="@+id/et_search_food"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:hint="Lebensmittel suchen..."
+            android:inputType="text"
+            android:singleLine="true"
+            android:textSize="14sp"
+            android:padding="10dp"
+            android:background="@color/foodloop_surface"
+            android:drawableStart="@android:drawable/ic_menu_search"
+            android:drawablePadding="6dp"/>
+
+        <ImageButton
+            android:id="@+id/btn_toggle_filters"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="8dp"
+            android:src="@drawable/ic_filter"
+            android:background="@color/foodloop_primary_light"
+            android:contentDescription="Filter und Sortierung"
+            android:padding="12dp"
+            android:scaleType="fitCenter"/>
+
+    </LinearLayout>
+
+    <!-- AUSKLAPPBARE FILTER -->
+
+    <LinearLayout
+        android:id="@+id/filter_panel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:padding="8dp"
+        android:layout_marginTop="6dp"
+        android:background="@color/foodloop_surface">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Kategorie"
+            android:textSize="12sp"/>
+
+        <Spinner
+            android:id="@+id/spinner_category"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Status"
+            android:textSize="12sp"/>
+
+        <Spinner
+            android:id="@+id/spinner_status"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Sortieren nach"
+            android:textSize="12sp"/>
+
+        <Spinner
+            android:id="@+id/spinner_sort"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"/>
+
+        <Button
+            android:id="@+id/btn_reset_filters"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="Filter zurücksetzen"
+            android:textAllCaps="false"/>
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/txt_food_results"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="0 Lebensmittel gefunden"
+        android:textSize="12sp"
+        android:textColor="@color/foodloop_text_secondary"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="6dp"/>
+
+    <!-- PRODUKTLISTE -->
 
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:fillViewport="true">
 
         <LinearLayout
             android:id="@+id/food_list"
@@ -37,22 +225,36 @@
 
     </ScrollView>
 
-    <Button
-        android:id="@+id/btn_add_food"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="+ Lebensmittel hinzufügen"
-        android:layout_marginTop="12dp"/>
+    <!-- KOMPAKTE AKTIONEN -->
 
-    <Button
-        android:id="@+id/btn_scan_food"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Produkt scannen"
-        android:textColor="#FFFFFF"
-        android:backgroundTint="#2E7D32"
-        android:drawableStart="@android:drawable/ic_menu_camera"
-        android:drawableTint="#FFFFFF"
-        android:layout_marginTop="4dp"/>
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:gravity="end|center_vertical"
+        android:layout_marginTop="4dp">
+
+        <Button
+            android:id="@+id/btn_scan_food"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:text="Scannen"
+            android:textAllCaps="false"
+            android:textColor="@color/foodloop_primary"
+            android:backgroundTint="@color/foodloop_primary_light"
+            android:drawableStart="@drawable/ic_camera"
+            android:drawablePadding="8dp"/>
+
+        <Button
+            android:id="@+id/btn_add_food"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:layout_marginStart="8dp"
+            android:text="+ Hinzufügen"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:backgroundTint="@color/foodloop_primary"/>
+
+    </LinearLayout>
 
 </LinearLayout>

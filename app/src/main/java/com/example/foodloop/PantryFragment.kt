@@ -35,10 +35,52 @@ import com.example.foodloop.repository.AuthRepository
 import com.example.foodloop.repository.FoodCloudRepository
 import com.example.foodloop.repository.CloudIdProvider
 import com.example.foodloop.notifications.NotificationScheduler
+import android.content.res.ColorStateList
+import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import android.widget.Spinner
+import androidx.core.widget.doAfterTextChanged
+import java.util.Calendar
+
+
 
 class PantryFragment : Fragment(R.layout.fragment_pantry) {
 
     private lateinit var foodList: LinearLayout
+
+
+    private lateinit var searchInput: EditText
+
+    private lateinit var categorySpinner: Spinner
+    private lateinit var statusSpinner: Spinner
+    private lateinit var sortSpinner: Spinner
+
+    private lateinit var totalFoodsText: TextView
+    private lateinit var expiringFoodsText: TextView
+    private lateinit var expiredFoodsText: TextView
+    private lateinit var resultsText: TextView
+
+    private var allFoods: List<Food> = emptyList()
+
+    private var categories: List<String> = listOf("Alle Kategorien")
+
+    private val statuses = listOf(
+        "Alle Produkte",
+        "Bald ablaufend",
+        "Abgelaufen",
+        "Haltbar"
+    )
+
+    private val sortingOptions = listOf(
+        "Ablaufdatum (aufsteigend)",
+        "Ablaufdatum (absteigend)",
+        "Name (A-Z)",
+        "Name (Z-A)",
+        "Kategorie"
+    )
 
     private val authRepository = AuthRepository()
 
@@ -143,10 +185,12 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
 
 
 
+
     override fun onViewCreated(
         view: View,
         savedInstanceState: Bundle?
     ) {
+
         super.onViewCreated(view, savedInstanceState)
 
         val uid = authRepository.getCurrentUserId()
@@ -160,6 +204,66 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
 
         foodList = view.findViewById(R.id.food_list)
 
+        searchInput = view.findViewById(R.id.et_search_food)
+
+        categorySpinner = view.findViewById(R.id.spinner_category)
+
+        statusSpinner = view.findViewById(R.id.spinner_status)
+
+        sortSpinner = view.findViewById(R.id.spinner_sort)
+
+        totalFoodsText = view.findViewById(R.id.txt_total_foods)
+
+        expiringFoodsText = view.findViewById(R.id.txt_expiring_foods)
+
+        expiredFoodsText = view.findViewById(R.id.txt_expired_foods)
+
+        resultsText = view.findViewById(R.id.txt_food_results)
+
+        allFoods = emptyList()
+
+        categories = listOf("Alle Kategorien")
+
+        setupFilters()
+
+
+        val filterPanel: LinearLayout =
+            view.findViewById(R.id.filter_panel)
+
+        val toggleFilters: View =
+            view.findViewById(R.id.btn_toggle_filters)
+
+        val resetFilters: Button =
+            view.findViewById(R.id.btn_reset_filters)
+
+        toggleFilters.setOnClickListener {
+
+            if (filterPanel.visibility == View.VISIBLE) {
+
+                filterPanel.visibility = View.GONE
+
+            } else {
+
+                filterPanel.visibility = View.VISIBLE
+            }
+        }
+
+        resetFilters.setOnClickListener {
+
+            searchInput.setText("")
+
+            categorySpinner.setSelection(0)
+
+            statusSpinner.setSelection(0)
+
+            sortSpinner.setSelection(0)
+
+            applyFilters()
+
+            filterPanel.visibility = View.GONE
+        }
+
+
         val addButton: Button =
             view.findViewById(R.id.btn_add_food)
 
@@ -167,6 +271,7 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
             view.findViewById(R.id.btn_scan_food)
 
         addButton.setOnClickListener {
+
             showFoodDialog()
         }
 
@@ -185,12 +290,247 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
             viewLifecycleOwner.repeatOnLifecycle(
                 Lifecycle.State.STARTED
             ) {
+
                 foodDao.getAllFoods(currentUserId).collect { foods ->
-                    displayFoods(foods)
+
+                    allFoods = foods
+
+                    updateCategories()
+
+                    updateStatistics()
+
+                    applyFilters()
                 }
             }
         }
     }
+
+
+    private fun setupFilters() {
+
+        setSpinnerOptions(categorySpinner, categories)
+
+        setSpinnerOptions(statusSpinner, statuses)
+
+        setSpinnerOptions(sortSpinner, sortingOptions)
+
+        searchInput.doAfterTextChanged {
+
+            applyFilters()
+        }
+
+        val selectionListener =
+            object : AdapterView.OnItemSelectedListener {
+
+                override fun onItemSelected(
+                    parent: AdapterView<*>?,
+                    view: View?,
+                    position: Int,
+                    id: Long
+                ) {
+
+                    applyFilters()
+                }
+
+                override fun onNothingSelected(
+                    parent: AdapterView<*>?
+                ) {
+                }
+            }
+
+        categorySpinner.onItemSelectedListener =
+            selectionListener
+
+        statusSpinner.onItemSelectedListener =
+            selectionListener
+
+        sortSpinner.onItemSelectedListener =
+            selectionListener
+    }
+
+    private fun setSpinnerOptions(
+        spinner: Spinner,
+        options: List<String>
+    ) {
+
+        val adapter = ArrayAdapter(
+            requireContext(),
+            android.R.layout.simple_spinner_item,
+            options
+        )
+
+        adapter.setDropDownViewResource(
+            android.R.layout.simple_spinner_dropdown_item
+        )
+
+        spinner.adapter = adapter
+    }
+
+    private fun updateCategories() {
+
+        val previousCategory =
+            categorySpinner.selectedItem?.toString()
+                ?: "Alle Kategorien"
+
+        val newCategories = listOf("Alle Kategorien") +
+                allFoods.map {
+                    it.category.trim()
+                }.filter {
+                    it.isNotEmpty()
+                }.distinct().sorted()
+
+        if (categories == newCategories) {
+            return
+        }
+
+        categories = newCategories
+
+        setSpinnerOptions(
+            categorySpinner,
+            categories
+        )
+
+        val selectedIndex =
+            categories.indexOf(previousCategory)
+
+        categorySpinner.setSelection(
+            if (selectedIndex >= 0) selectedIndex else 0
+        )
+    }
+
+    private fun getDateLimits(): Pair<String, String> {
+
+        val formatter = SimpleDateFormat(
+            "yyyy-MM-dd",
+            Locale.US
+        )
+
+        val calendar = Calendar.getInstance()
+
+        val today = formatter.format(calendar.time)
+
+        calendar.add(Calendar.DAY_OF_YEAR, 3)
+
+        val limit = formatter.format(calendar.time)
+
+        return Pair(today, limit)
+    }
+
+    private fun updateStatistics() {
+
+        val (today, limit) = getDateLimits()
+
+        val expired = allFoods.count {
+
+            it.expirationDate < today
+        }
+
+        val expiring = allFoods.count {
+
+            it.expirationDate >= today &&
+                    it.expirationDate <= limit
+        }
+
+        totalFoodsText.text =
+            allFoods.size.toString()
+
+        expiringFoodsText.text =
+            expiring.toString()
+
+        expiredFoodsText.text =
+            expired.toString()
+    }
+
+    private fun applyFilters() {
+
+        val searchText = searchInput.text
+            .toString()
+            .trim()
+            .lowercase(Locale.GERMAN)
+
+        val selectedCategory =
+            categorySpinner.selectedItem?.toString()
+                ?: "Alle Kategorien"
+
+        val selectedStatus =
+            statusSpinner.selectedItem?.toString()
+                ?: "Alle Produkte"
+
+        val selectedSort =
+            sortSpinner.selectedItemPosition
+
+        val (today, limit) = getDateLimits()
+
+        var filteredFoods = allFoods.filter { food ->
+
+            val matchesSearch =
+                food.name.lowercase(Locale.GERMAN)
+                    .contains(searchText) ||
+
+                        food.category.lowercase(Locale.GERMAN)
+                            .contains(searchText) ||
+
+                        food.location.lowercase(Locale.GERMAN)
+                            .contains(searchText)
+
+            val matchesCategory =
+                selectedCategory == "Alle Kategorien" ||
+                        food.category.trim() == selectedCategory
+
+            val matchesStatus = when (selectedStatus) {
+
+                "Bald ablaufend" ->
+
+                    food.expirationDate >= today &&
+                            food.expirationDate <= limit
+
+                "Abgelaufen" ->
+
+                    food.expirationDate < today
+
+                "Haltbar" ->
+
+                    food.expirationDate > limit
+
+                else -> true
+            }
+
+            matchesSearch &&
+                    matchesCategory &&
+                    matchesStatus
+        }
+
+        filteredFoods = when (selectedSort) {
+
+            1 -> filteredFoods.sortedByDescending {
+                it.expirationDate
+            }
+
+            2 -> filteredFoods.sortedBy {
+                it.name.lowercase(Locale.GERMAN)
+            }
+
+            3 -> filteredFoods.sortedByDescending {
+                it.name.lowercase(Locale.GERMAN)
+            }
+
+            4 -> filteredFoods.sortedBy {
+                it.category.lowercase(Locale.GERMAN)
+            }
+
+            else -> filteredFoods.sortedBy {
+                it.expirationDate
+            }
+        }
+
+        resultsText.text =
+            "${filteredFoods.size} von " +
+                    "${allFoods.size} Lebensmittel gefunden"
+
+        displayFoods(filteredFoods)
+    }
+
+
 
 
 
@@ -198,93 +538,395 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
 
         foodList.removeAllViews()
 
+        val context = requireContext()
+
         if (foods.isEmpty()) {
-            val emptyText = TextView(requireContext())
-            emptyText.text = "Noch keine Lebensmittel vorhanden"
-            emptyText.textSize = 16f
-            emptyText.setPadding(12, 20, 12, 20)
+
+            val emptyText = TextView(context)
+
+            emptyText.text = if (allFoods.isEmpty()) {
+                "Noch keine Lebensmittel vorhanden"
+            } else {
+                "Keine passenden Lebensmittel gefunden"
+            }
+
+            emptyText.textSize = 15f
+
+            emptyText.gravity = android.view.Gravity.CENTER
+
+            emptyText.setTextColor(
+                Color.parseColor("#757575")
+            )
+
+            emptyText.setPadding(
+                dp(12),
+                dp(24),
+                dp(12),
+                dp(24)
+            )
+
             foodList.addView(emptyText)
+
             return
         }
 
+        val (today, limit) = getDateLimits()
+
         for (food in foods) {
 
-            val item = LinearLayout(requireContext())
-            item.orientation = LinearLayout.VERTICAL
-            item.setPadding(16, 16, 16, 16)
+            val item = LinearLayout(context)
 
-            val nameText = TextView(requireContext())
-            nameText.text = food.name
-            nameText.textSize = 20f
+            item.orientation = LinearLayout.HORIZONTAL
 
-            val infoText = TextView(requireContext())
-            infoText.text =
-                "${food.quantity} ${food.unit}\n" +
-                        "Kategorie: ${food.category}\n" +
-                        "Lagerort: ${food.location}\n" +
-                        "Ablaufdatum: ${food.expirationDate}"
+            item.gravity = android.view.Gravity.CENTER_VERTICAL
 
-            val editButton = Button(requireContext())
-            editButton.text = "Bearbeiten"
+            item.setPadding(
+                dp(10),
+                dp(10),
+                dp(8),
+                dp(10)
+            )
 
-            editButton.setOnClickListener {
-                showFoodDialog(food)
-            }
+            val background = GradientDrawable()
 
-            val deleteButton = Button(requireContext())
-            deleteButton.text = "Löschen"
+            background.setColor(Color.WHITE)
 
-            deleteButton.setOnClickListener {
-                deleteFood(food)
-            }
+            background.cornerRadius = dp(12).toFloat()
+
+            background.setStroke(
+                dp(1),
+                Color.parseColor("#DDE8DD")
+            )
+
+            item.background = background
+
+            val itemParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+
+            itemParams.bottomMargin = dp(8)
+
+            item.layoutParams = itemParams
+
+            // PRODUKTFOTO
 
             val photoPath = food.photoPath
 
-            if (photoPath != null && File(photoPath).exists()) {
+            if (photoPath != null &&
+                File(photoPath).exists()
+            ) {
 
-                val imageView = ImageView(requireContext())
+                val imageView = ImageView(context)
 
-                imageView.layoutParams =
-                    LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        (200 * resources.displayMetrics.density).toInt()
-                    )
+                val imageParams = LinearLayout.LayoutParams(
+                    dp(58),
+                    dp(58)
+                )
+
+                imageParams.marginEnd = dp(12)
+
+                imageView.layoutParams = imageParams
 
                 imageView.scaleType =
-                    ImageView.ScaleType.FIT_CENTER
+                    ImageView.ScaleType.CENTER_CROP
 
                 imageView.setImageURI(
                     Uri.fromFile(File(photoPath))
                 )
 
+                imageView.contentDescription = food.name
+
                 imageView.setOnClickListener {
+
                     showFullPhoto(photoPath)
                 }
 
                 item.addView(imageView)
+
+            } else {
+
+                val placeholder = ImageView(context)
+
+                val placeholderParams =
+                    LinearLayout.LayoutParams(
+                        dp(48),
+                        dp(48)
+                    )
+
+                placeholderParams.marginEnd = dp(12)
+
+                placeholder.layoutParams =
+                    placeholderParams
+
+                placeholder.setImageResource(
+                    R.drawable.ic_pantry
+                )
+
+                placeholder.setPadding(
+                    dp(10),
+                    dp(10),
+                    dp(10),
+                    dp(10)
+                )
+
+                val placeholderBackground =
+                    GradientDrawable()
+
+                placeholderBackground.setColor(
+                    Color.parseColor("#E8F5E9")
+                )
+
+                placeholderBackground.cornerRadius =
+                    dp(10).toFloat()
+
+                placeholder.background =
+                    placeholderBackground
+
+                item.addView(placeholder)
             }
 
+            // PRODUKTINFORMATIONEN
 
-            item.addView(nameText)
-            item.addView(infoText)
-            item.addView(editButton)
-            if (food.photoPath != null) {
+            val information = LinearLayout(context)
 
-                val removePhotoButton = Button(requireContext())
+            information.orientation =
+                LinearLayout.VERTICAL
 
-                removePhotoButton.text = "Foto entfernen"
+            information.layoutParams =
+                LinearLayout.LayoutParams(
+                    0,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    1f
+                )
 
-                removePhotoButton.setOnClickListener {
-                    removeFoodPhoto(food)
+            val nameText = TextView(context)
+
+            nameText.text = food.name
+
+            nameText.textSize = 17f
+
+            nameText.setTypeface(
+                null,
+                Typeface.BOLD
+            )
+
+            nameText.setTextColor(
+                Color.parseColor("#212121")
+            )
+
+            nameText.maxLines = 1
+
+            nameText.ellipsize =
+                android.text.TextUtils.TruncateAt.END
+
+            val quantityText = TextView(context)
+
+            quantityText.text =
+                "${food.quantity} ${food.unit} · ${food.location}"
+
+            quantityText.textSize = 13f
+
+            quantityText.setTextColor(
+                Color.parseColor("#757575")
+            )
+
+            quantityText.maxLines = 1
+
+            quantityText.ellipsize =
+                android.text.TextUtils.TruncateAt.END
+
+            val statusText = TextView(context)
+
+            statusText.textSize = 12f
+
+            statusText.setTypeface(
+                null,
+                Typeface.BOLD
+            )
+
+            when {
+
+                food.expirationDate < today -> {
+
+                    statusText.text =
+                        "Abgelaufen · ${food.expirationDate}"
+
+                    statusText.setTextColor(
+                        Color.parseColor("#C62828")
+                    )
                 }
 
-                item.addView(removePhotoButton)
+                food.expirationDate == today -> {
+
+                    statusText.text = "Läuft heute ab!"
+
+                    statusText.setTextColor(
+                        Color.parseColor("#EF6C00")
+                    )
+                }
+
+                food.expirationDate <= limit -> {
+
+                    statusText.text =
+                        "Bald · ${food.expirationDate}"
+
+                    statusText.setTextColor(
+                        Color.parseColor("#EF6C00")
+                    )
+                }
+
+                else -> {
+
+                    statusText.text =
+                        "Haltbar · ${food.expirationDate}"
+
+                    statusText.setTextColor(
+                        Color.parseColor("#2E7D32")
+                    )
+                }
             }
-            item.addView(deleteButton)
+
+            information.addView(nameText)
+
+            information.addView(quantityText)
+
+            information.addView(statusText)
+
+            item.addView(information)
+
+            // DETAILBUTTON
+
+            val detailsButton = TextView(context)
+
+            detailsButton.text = "⋮"
+
+            detailsButton.textSize = 26f
+
+            detailsButton.gravity =
+                android.view.Gravity.CENTER
+
+            detailsButton.setTextColor(
+                Color.parseColor("#616161")
+            )
+
+            detailsButton.layoutParams =
+                LinearLayout.LayoutParams(
+                    dp(48),
+                    dp(48)
+                )
+
+            detailsButton.contentDescription =
+                "Produktdetails: ${food.name}"
+
+            detailsButton.setOnClickListener {
+
+                showFoodDetails(food)
+            }
+
+            item.addView(detailsButton)
+
+            item.setOnClickListener {
+
+                showFoodDetails(food)
+            }
 
             foodList.addView(item)
         }
     }
+
+
+
+    private fun showFoodDetails(food: Food) {
+
+        val context = requireContext()
+
+        val options = mutableListOf(
+            "Bearbeiten"
+        )
+
+        val photoPath = food.photoPath
+
+        if (photoPath != null &&
+            File(photoPath).exists()
+        ) {
+
+            options.add("Foto anzeigen")
+        }
+
+        if (photoPath != null) {
+
+            options.add("Foto entfernen")
+        }
+
+        options.add("Löschen")
+
+        val information =
+            "Menge: ${food.quantity} ${food.unit}\n\n" +
+                    "Kategorie: ${food.category}\n\n" +
+                    "Lagerort: ${food.location}\n\n" +
+                    "Ablaufdatum: ${food.expirationDate}"
+
+        AlertDialog.Builder(context)
+
+            .setTitle(food.name)
+
+            .setMessage(information)
+
+            .setPositiveButton("Aktionen") { _, _ ->
+
+                AlertDialog.Builder(context)
+
+                    .setTitle("Produktaktionen")
+
+                    .setItems(
+                        options.toTypedArray()
+                    ) { _, position ->
+
+                        when (options[position]) {
+
+                            "Bearbeiten" -> {
+
+                                showFoodDialog(food)
+                            }
+
+                            "Foto anzeigen" -> {
+
+                                photoPath?.let {
+
+                                    showFullPhoto(it)
+                                }
+                            }
+
+                            "Foto entfernen" -> {
+
+                                removeFoodPhoto(food)
+                            }
+
+                            "Löschen" -> {
+
+                                deleteFood(food)
+                            }
+                        }
+                    }
+
+                    .setNegativeButton(
+                        "Abbrechen",
+                        null
+                    )
+
+                    .show()
+            }
+
+            .setNegativeButton(
+                "Schließen",
+                null
+            )
+
+            .show()
+    }
+
+
 
     private fun showFoodDialog(
         food: Food? = null,
@@ -813,5 +1455,11 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
         }
     }
 
+    private fun dp(value: Int): Int {
+
+        return (
+                value * resources.displayMetrics.density
+                ).toInt()
+    }
 
 }

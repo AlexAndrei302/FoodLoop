@@ -12,7 +12,20 @@
           "package_name": "com.example.foodloop"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "16278098029-6jg1h2ckth9mkktvmqm1100gti6b68ra.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.foodloop",
+            "certificate_hash": "148baeb2a73b942e3f945b4839334a8542701578"
+          }
+        },
+        {
+          "client_id": "16278098029-251oolle8amgro0e57u064assnkspkdp.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDmR1BdqIXBQkkx_1UUF6cB3lYShAY6LIs"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "16278098029-251oolle8amgro0e57u064assnkspkdp.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

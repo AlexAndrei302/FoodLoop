@@ -1,9 +1,47 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.FoodLoop" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+<resources>
+
+    <style name="Base.Theme.FoodLoop"
+        parent="Theme.Material3.Light.NoActionBar">
+
+        <item name="colorPrimary">@color/foodloop_primary</item>
+
+        <item name="colorOnPrimary">@color/white</item>
+
+        <item name="colorPrimaryContainer">@color/foodloop_primary_light</item>
+
+        <item name="colorOnPrimaryContainer">@color/foodloop_primary_dark</item>
+
+        <item name="colorSecondary">@color/foodloop_primary</item>
+
+        <item name="colorOnSecondary">@color/white</item>
+
+        <item name="colorSecondaryContainer">@color/foodloop_primary_light</item>
+
+        <item name="colorOnSecondaryContainer">@color/foodloop_primary_dark</item>
+
+        <item name="colorSurface">@color/foodloop_surface</item>
+
+        <item name="colorOnSurface">@color/foodloop_text</item>
+
+        <item name="colorOnSurfaceVariant">@color/foodloop_text_secondary</item>
+
+        <item name="colorError">@color/foodloop_error</item>
+
+        <item name="android:windowBackground">@color/foodloop_background</item>
+
+        <item name="android:statusBarColor">@color/foodloop_background</item>
+
+        <item name="android:navigationBarColor">@color/foodloop_surface</item>
+
+        <item name="android:windowLightStatusBar">true</item>
+
+        <item name="android:windowLightNavigationBar">true</item>
+
+        <item name="android:forceDarkAllowed">false</item>
+
     </style>
 
-    <style name="Theme.FoodLoop" parent="Base.Theme.FoodLoop" />
+    <style name="Theme.FoodLoop"
+        parent="Base.Theme.FoodLoop"/>
+
 </resources>

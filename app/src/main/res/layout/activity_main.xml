@@ -1,19 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:fitsSystemWindows="true">
+    android:fitsSystemWindows="true"
+    android:background="@color/foodloop_background">
 
-    <!-- Header -->
+    <!-- HEADER -->
+
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="56dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:padding="12dp"
-        android:background="#E8F5E9">
+        android:paddingStart="16dp"
+        android:paddingEnd="12dp"
+        android:background="@color/foodloop_surface">
 
         <TextView
             android:layout_width="0dp"
@@ -22,58 +26,101 @@
             android:text="FoodLoop"
             android:textSize="24sp"
             android:textStyle="bold"
-            android:textColor="#2E7D32" />
+            android:textColor="@color/foodloop_primary"/>
 
         <ImageButton
             android:id="@+id/btn_profile"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:src="@android:drawable/ic_menu_myplaces"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:src="@drawable/ic_profile"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:tint="#2E7D32"
             android:contentDescription="Mein Profil"
-            android:padding="10dp" />
+            android:padding="10dp"
+            android:scaleType="fitCenter"/>
 
     </LinearLayout>
 
-    <!-- Fragment Container -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/foodloop_border"/>
+
+    <!-- FRAGMENT -->
+
     <FrameLayout
         android:id="@+id/fragment_container"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1" />
+        android:layout_weight="1"/>
 
-    <!-- Bottom Navigation -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/foodloop_border"/>
+
+    <!-- BOTTOM NAVIGATION -->
+
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="64dp"
         android:orientation="horizontal"
-        android:padding="8dp"
-        android:background="#E8F5E9">
+        android:background="@color/foodloop_surface"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp">
 
         <Button
             android:id="@+id/btn_pantry"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_weight="1"
+            android:background="?attr/selectableItemBackground"
+            android:drawableTop="@drawable/ic_pantry"
+            android:drawablePadding="4dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
             android:text="Vorrat"
-            android:textSize="12sp" />
+            android:textSize="12sp"
+            android:textColor="@color/foodloop_primary"
+            android:textAllCaps="false"
+            android:gravity="center"
+            android:minHeight="0dp"
+            android:minWidth="0dp"/>
 
         <Button
             android:id="@+id/btn_recipes"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_weight="1"
+            android:background="?attr/selectableItemBackground"
+            android:drawableTop="@drawable/ic_recipes"
+            android:drawablePadding="4dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
             android:text="Rezepte"
-            android:textSize="12sp" />
+            android:textSize="12sp"
+            android:textColor="@color/foodloop_primary"
+            android:textAllCaps="false"
+            android:gravity="center"
+            android:minHeight="0dp"
+            android:minWidth="0dp"/>
 
         <Button
             android:id="@+id/btn_shopping"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_weight="1"
+            android:background="?attr/selectableItemBackground"
+            android:drawableTop="@drawable/ic_shopping"
+            android:drawablePadding="4dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
             android:text="Liste"
-            android:textSize="12sp" />
+            android:textSize="12sp"
+            android:textColor="@color/foodloop_primary"
+            android:textAllCaps="false"
+            android:gravity="center"
+            android:minHeight="0dp"
+            android:minWidth="0dp"/>
 
     </LinearLayout>
 

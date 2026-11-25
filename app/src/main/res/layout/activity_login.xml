@@ -54,6 +54,7 @@
             android:layout_height="56dp"
             android:hint="E-Mail-Adresse"
             android:inputType="textEmailAddress"
+            android:autofillHints="emailAddress"
             android:textColor="#212121"
             android:textColorHint="#757575"
             android:layout_marginBottom="16dp"/>
@@ -64,6 +65,7 @@
             android:layout_height="56dp"
             android:hint="Passwort"
             android:inputType="textPassword"
+            android:autofillHints="password"
             android:textColor="#212121"
             android:textColorHint="#757575"
             android:layout_marginBottom="8dp"/>
@@ -93,15 +95,38 @@
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:layout_marginTop="16dp"
+            android:indeterminateTint="#2E7D32"
             android:visibility="gone"/>
 
-        <TextView
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="ODER"
-            android:textColor="#757575"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
             android:layout_marginTop="24dp"
-            android:layout_marginBottom="16dp"/>
+            android:layout_marginBottom="16dp">
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1"
+                android:background="#DDDDDD"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ODER"
+                android:textColor="#757575"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"/>
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1"
+                android:background="#DDDDDD"/>
+
+        </LinearLayout>
 
         <Button
             android:id="@+id/btnGoogleLogin"
@@ -110,8 +135,9 @@
             android:text="Mit Google anmelden"
             android:textColor="#212121"
             android:backgroundTint="#EEEEEE"
+            android:textSize="16sp"
             android:textAllCaps="false"
-            android:enabled="false"/>
+            android:enabled="true"/>
 
         <TextView
             android:id="@+id/tvRegister"

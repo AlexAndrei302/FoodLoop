@@ -1,5 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <color name="foodloop_primary">#2E7D32</color>
+    <color name="foodloop_primary_dark">#1B5E20</color>
+    <color name="foodloop_primary_light">#E8F5E9</color>
+
+    <color name="foodloop_background">#F5F9F5</color>
+    <color name="foodloop_surface">#FFFFFF</color>
+
+    <color name="foodloop_text">#212121</color>
+    <color name="foodloop_text_secondary">#757575</color>
+    <color name="foodloop_border">#DDE8DD</color>
+
+    <color name="foodloop_warning">#EF6C00</color>
+    <color name="foodloop_error">#C62828</color>
+    <color name="foodloop_success">#2E7D32</color>
+
+    <color name="foodloop_warning_light">#FFF3E0</color>
+    <color name="foodloop_error_light">#FFEBEE</color>
+
 </resources>
