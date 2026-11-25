@@ -8,6 +8,9 @@
     <!-- Camera permission -->
     <uses-permission android:name="android.permission.CAMERA" />
 
+    <!-- Notifications permission -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <!-- Camera hardware -->
     <uses-feature
         android:name="android.hardware.camera"

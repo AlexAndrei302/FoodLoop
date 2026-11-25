@@ -78,7 +78,8 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:$cameraVersion")
     implementation("androidx.camera:camera-view:$cameraVersion")
 
-// Google ML Kit - Text Recognition
+    // Google ML Kit - Text Recognition
     implementation("com.google.mlkit:text-recognition:16.0.1")
 
+    implementation("androidx.work:work-runtime-ktx:2.10.1")
 }

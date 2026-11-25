@@ -11,6 +11,13 @@ import androidx.fragment.app.Fragment
 import com.example.foodloop.auth.LoginActivity
 import com.example.foodloop.repository.AuthRepository
 import com.google.firebase.auth.FirebaseAuth
+import android.Manifest
+import android.os.Build
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
+import androidx.activity.result.contract.ActivityResultContracts
+import com.example.foodloop.notifications.NotificationHelper
+import com.example.foodloop.notifications.NotificationScheduler
 
 class MainActivity : AppCompatActivity() {
 
@@ -50,7 +57,42 @@ class MainActivity : AppCompatActivity() {
             .setOnClickListener {
                 showProfileDialog()
             }
+        setupNotifications()
     }
+
+
+    private val notificationPermissionLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { granted ->
+
+            if (granted) {
+
+                NotificationScheduler.testNow(this)
+            }
+        }
+
+    private fun setupNotifications() {
+
+        NotificationHelper.createChannel(this)
+
+        NotificationScheduler.schedule(this)
+
+        if (Build.VERSION.SDK_INT >= 33) {
+
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+
+                notificationPermissionLauncher.launch(
+                    Manifest.permission.POST_NOTIFICATIONS
+                )
+            }
+        }
+    }
+
 
     private fun openFragment(fragment: Fragment) {
         supportFragmentManager.beginTransaction()
@@ -75,6 +117,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun logoutUser() {
+        NotificationScheduler.cancel(this)
+
+        getSystemService(
+            android.app.NotificationManager::class.java
+        ).cancelAll()
 
         authRepository.logout()
 

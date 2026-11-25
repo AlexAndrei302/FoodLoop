@@ -1,6 +1,6 @@
-
 package com.example.foodloop.database
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -12,5 +12,8 @@ data class ShoppingItem(
 
     val name: String,
 
-    val checked: Boolean = false
+    val checked: Boolean = false,
+
+    @ColumnInfo(defaultValue = "''")
+    val userId: String
 )

@@ -31,10 +31,20 @@ import androidx.activity.result.contract.ActivityResultContracts
 import kotlinx.coroutines.flow.first
 import java.io.File
 import java.util.UUID
+import com.example.foodloop.repository.AuthRepository
+import com.example.foodloop.repository.FoodCloudRepository
+import com.example.foodloop.repository.CloudIdProvider
+import com.example.foodloop.notifications.NotificationScheduler
 
 class PantryFragment : Fragment(R.layout.fragment_pantry) {
 
     private lateinit var foodList: LinearLayout
+
+    private val authRepository = AuthRepository()
+
+    private val cloudRepository = FoodCloudRepository()
+
+    private lateinit var currentUserId: String
 
     private val scanLauncher =
         registerForActivityResult(
@@ -46,11 +56,86 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
                 val photoPath =
                     result.data?.getStringExtra("photoPath")
 
+                val expirationDate =
+                    result.data?.getStringExtra("expirationDate")
+
                 if (photoPath != null) {
-                    showProductSelectionDialog(photoPath)
+
+                    showProductSelectionDialog(
+                        photoPath,
+                        expirationDate
+                    )
                 }
             }
         }
+
+
+    private fun showProductSelectionDialog(
+        photoPath: String,
+        expirationDate: String? = null
+    ) {
+
+        viewLifecycleOwner.lifecycleScope.launch {
+
+            val foods = foodDao.getAllFoods(currentUserId).first()
+
+            val options = foods.map { food ->
+
+                "${food.name} - " +
+                        "${food.quantity} ${food.unit} " +
+                        "(#${food.id})"
+
+            } + "+ Neues Lebensmittel"
+
+            AlertDialog.Builder(requireContext())
+
+                .setTitle("Produkt auswählen")
+
+                .setItems(options.toTypedArray()) { _, position ->
+
+                    if (position == foods.size) {
+
+                        showFoodDialog(
+                            photoPath = photoPath,
+                            detectedDate = expirationDate
+                        )
+
+                    } else {
+
+                        val selectedFood = foods[position]
+
+                        if (expirationDate != null) {
+
+                            showDateConfirmationDialog(
+                                selectedFood,
+                                photoPath,
+                                expirationDate
+                            )
+
+                        } else {
+
+                            savePhotoToProduct(
+                                selectedFood,
+                                photoPath
+                            )
+                        }
+                    }
+                }
+
+                .setNegativeButton("Abbrechen") { _, _ ->
+
+                    File(photoPath).delete()
+                }
+
+                .setOnCancelListener {
+
+                    File(photoPath).delete()
+                }
+
+                .show()
+        }
+    }
+
 
     private val foodDao by lazy {
         FoodDatabase.getDatabase(requireContext()).foodDao()
@@ -63,6 +148,15 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
         savedInstanceState: Bundle?
     ) {
         super.onViewCreated(view, savedInstanceState)
+
+        val uid = authRepository.getCurrentUserId()
+
+        if (uid == null) {
+            requireActivity().finish()
+            return
+        }
+
+        currentUserId = uid
 
         foodList = view.findViewById(R.id.food_list)
 
@@ -91,7 +185,7 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
             viewLifecycleOwner.repeatOnLifecycle(
                 Lifecycle.State.STARTED
             ) {
-                foodDao.getAllFoods().collect { foods ->
+                foodDao.getAllFoods(currentUserId).collect { foods ->
                     displayFoods(foods)
                 }
             }
@@ -194,7 +288,8 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
 
     private fun showFoodDialog(
         food: Food? = null,
-        photoPath: String? = null) {
+        photoPath: String? = null,
+        detectedDate: String? = null) {
 
         val context = requireContext()
 
@@ -227,9 +322,14 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
         locationInput.hint = "Lagerort"
         locationInput.setText(food?.location ?: "")
 
+
+
         val dateInput = EditText(context)
+
         dateInput.hint = "Ablaufdatum (YYYY-MM-DD)"
-        dateInput.setText(food?.expirationDate ?: "")
+
+        dateInput.setText(detectedDate ?: food?.expirationDate ?: "")
+
 
         val displayedPhoto = photoPath ?: food?.photoPath
 
@@ -353,16 +453,32 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
                                     category = category,
                                     location = location,
                                     expirationDate = date,
-                                    photoPath = savedPhotoPath
+                                    photoPath = savedPhotoPath,
+                                    userId = currentUserId
                                 )
 
                                 try {
 
-                                    if (food == null) {
-                                        foodDao.insert(newFood)
+
+                                    val savedFood = if (food == null) {
+
+                                        val generatedId = foodDao.insert(newFood)
+
+                                        newFood.copy(
+                                            id = generatedId.toInt()
+                                        )
+
                                     } else {
+
                                         foodDao.update(newFood)
+
+                                        newFood
                                     }
+
+                                    withContext(Dispatchers.Main) {
+                                        saveFoodToCloud(savedFood)
+                                    }
+
 
                                 } catch (e: Exception) {
 
@@ -384,6 +500,7 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
                                 }
                             }
 
+                            NotificationScheduler.testNow(context)
                             dialog.dismiss()
 
                         } catch (e: kotlinx.coroutines.CancellationException) {
@@ -418,11 +535,17 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
 
                 viewLifecycleOwner.lifecycleScope.launch {
                     withContext(Dispatchers.IO) {
-                        val currentFood = foodDao.getFoodById(food.id)
+                        val currentFood = foodDao.getFoodById(
+                            food.id,
+                            currentUserId
+                        )
 
                         if (currentFood != null) {
 
                             foodDao.delete(currentFood)
+                            withContext(Dispatchers.Main) {
+                                deleteFoodFromCloud(currentFood)
+                            }
 
                             currentFood.photoPath?.let {
                                 File(it).delete()
@@ -436,47 +559,53 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
     }
 
 
-    private fun showProductSelectionDialog(
-        photoPath: String
+    private fun showDateConfirmationDialog(
+        food: Food,
+        photoPath: String,
+        detectedDate: String
     ) {
 
-        viewLifecycleOwner.lifecycleScope.launch {
+        AlertDialog.Builder(requireContext())
 
-            val foods = foodDao.getAllFoods().first()
+            .setTitle("Ablaufdatum aktualisieren?")
 
-            val options = foods.map { food ->
-                "${food.name} - ${food.quantity} ${food.unit} (#${food.id})"
-            }.toMutableList()
+            .setMessage(
+                "Produkt: ${food.name}\n\n" +
+                        "Aktuelles Datum: ${food.expirationDate}\n" +
+                        "Erkanntes Datum: $detectedDate\n\n" +
+                        "Möchtest du das Ablaufdatum aktualisieren?"
+            )
 
-            options.add("+ Neues Lebensmittel")
+            .setPositiveButton("Datum überprüfen") { _, _ ->
 
-            AlertDialog.Builder(requireContext())
-                .setTitle("Produkt auswählen")
-                .setItems(options.toTypedArray()) { _, position ->
+                showFoodDialog(
+                    food = food,
+                    photoPath = photoPath,
+                    detectedDate = detectedDate
+                )
+            }
 
-                    if (position == foods.size) {
+            .setNegativeButton("Nur Foto speichern") { _, _ ->
 
-                        showFoodDialog(
-                            photoPath = photoPath
-                        )
+                savePhotoToProduct(
+                    food,
+                    photoPath
+                )
+            }
 
-                    } else {
+            .setNeutralButton("Abbrechen") { _, _ ->
 
-                        savePhotoToProduct(
-                            foods[position],
-                            photoPath
-                        )
-                    }
-                }
-                .setNegativeButton("Abbrechen") { _, _ ->
-                    File(photoPath).delete()
-                }
-                .setOnCancelListener {
-                    File(photoPath).delete()
-                }
-                .show()
-        }
+                File(photoPath).delete()
+            }
+
+            .setOnCancelListener {
+
+                File(photoPath).delete()
+            }
+
+            .show()
     }
+
 
 
     private fun savePhotoPermanently(
@@ -521,7 +650,10 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
                 withContext(Dispatchers.IO) {
 
                     val currentFood =
-                        foodDao.getFoodById(food.id)
+                        foodDao.getFoodById(
+                            food.id,
+                            currentUserId
+                        )
                             ?: error("Produkt nicht gefunden")
 
                     val savedPath = savePhotoPermanently(
@@ -603,7 +735,10 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
                     withContext(Dispatchers.IO) {
 
                         val currentFood =
-                            foodDao.getFoodById(food.id)
+                            foodDao.getFoodById(
+                                food.id,
+                                currentUserId
+                            )
 
                         if (currentFood != null) {
 
@@ -624,6 +759,59 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
             .show()
     }
 
+
+    private fun saveFoodToCloud(food: Food) {
+
+        val context = requireContext().applicationContext
+
+        if (authRepository.getCurrentUserId() != food.userId) {
+            return
+        }
+
+        val cloudId = CloudIdProvider.getId(
+            context,
+            food.id
+        )
+
+        cloudRepository.saveFood(
+            cloudId,
+            food
+        ) { success, message ->
+
+            if (!success) {
+                android.util.Log.e(
+                    "FoodLoopCloud",
+                    message
+                )
+            }
+        }
+    }
+
+    private fun deleteFoodFromCloud(food: Food) {
+
+        val context = requireContext().applicationContext
+
+        if (authRepository.getCurrentUserId() != food.userId) {
+            return
+        }
+
+        val cloudId = CloudIdProvider.getId(
+            context,
+            food.id
+        )
+
+        cloudRepository.deleteFood(
+            cloudId
+        ) { success, message ->
+
+            if (!success) {
+                android.util.Log.e(
+                    "FoodLoopCloud",
+                    message
+                )
+            }
+        }
+    }
 
 
 }

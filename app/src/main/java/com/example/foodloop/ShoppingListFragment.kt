@@ -18,11 +18,21 @@ import com.example.foodloop.database.ShoppingItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.example.foodloop.repository.AuthRepository
+import com.example.foodloop.repository.ShoppingCloudRepository
+import com.example.foodloop.repository.CloudIdProvider
+import android.widget.Toast
 
 class ShoppingListFragment :
     Fragment(R.layout.fragment_shopping_list) {
 
     private lateinit var shoppingList: LinearLayout
+
+    private val authRepository = AuthRepository()
+
+    private val cloudRepository = ShoppingCloudRepository()
+
+    private lateinit var currentUserId: String
 
     private val shoppingDao by lazy {
         FoodDatabase.getDatabase(requireContext())
@@ -34,6 +44,15 @@ class ShoppingListFragment :
         savedInstanceState: Bundle?
     ) {
         super.onViewCreated(view, savedInstanceState)
+
+        val uid = authRepository.getCurrentUserId()
+
+        if (uid == null) {
+            requireActivity().finish()
+            return
+        }
+
+        currentUserId = uid
 
         shoppingList = view.findViewById(R.id.shopping_list)
 
@@ -49,7 +68,7 @@ class ShoppingListFragment :
             viewLifecycleOwner.repeatOnLifecycle(
                 Lifecycle.State.STARTED
             ) {
-                shoppingDao.getAllItems().collect { items ->
+                shoppingDao.getAllItems(currentUserId).collect { items ->
                     displayItems(items)
                 }
             }
@@ -92,16 +111,22 @@ class ShoppingListFragment :
 
                 viewLifecycleOwner.lifecycleScope.launch {
                     withContext(Dispatchers.IO) {
-                        shoppingDao.update(
-                            item.copy(checked = checked)
+                        val updatedItem = item.copy(
+                            checked = checked
                         )
+
+                        shoppingDao.update(updatedItem)
+
+                        withContext(Dispatchers.Main) {
+                            saveItemToCloud(updatedItem)
+                        }
                     }
                 }
             }
 
 
             val deleteButton = Button(requireContext())
-            deleteButton.text = "X"
+            deleteButton.text = "Löschen"
 
             deleteButton.setOnClickListener {
                 deleteItem(item)
@@ -145,11 +170,22 @@ class ShoppingListFragment :
                     input.error = "Bitte Produktname eingeben"
                 } else {
 
-                    val item = ShoppingItem(name = name)
+                    val item = ShoppingItem(
+                        name = name,
+                        userId = currentUserId
+                    )
 
                     viewLifecycleOwner.lifecycleScope.launch {
                         withContext(Dispatchers.IO) {
-                            shoppingDao.insert(item)
+                            val generatedId = shoppingDao.insert(item)
+
+                            val savedItem = item.copy(
+                                id = generatedId.toInt()
+                            )
+
+                            withContext(Dispatchers.Main) {
+                                saveItemToCloud(savedItem)
+                            }
                         }
                     }
 
@@ -162,20 +198,118 @@ class ShoppingListFragment :
     }
 
 
+
     private fun deleteItem(item: ShoppingItem) {
 
-        AlertDialog.Builder(requireContext())
+        val context = requireContext()
+
+        AlertDialog.Builder(context)
             .setTitle("Produkt löschen")
             .setMessage("${item.name} wirklich löschen?")
             .setPositiveButton("Löschen") { _, _ ->
 
                 viewLifecycleOwner.lifecycleScope.launch {
-                    withContext(Dispatchers.IO) {
-                        shoppingDao.delete(item)
+
+                    try {
+
+                        val affectedRows = withContext(Dispatchers.IO) {
+
+                            shoppingDao.deleteItem(
+                                item.id,
+                                currentUserId
+                            )
+                        }
+
+                        if (affectedRows > 0) {
+
+                            deleteItemFromCloud(item)
+
+                            Toast.makeText(
+                                context,
+                                "Produkt erfolgreich gelöscht",
+                                Toast.LENGTH_SHORT
+                            ).show()
+
+                        } else {
+
+                            Toast.makeText(
+                                context,
+                                "Produkt nicht gefunden",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+
+                    } catch (e: kotlinx.coroutines.CancellationException) {
+
+                        throw e
+
+                    } catch (e: Exception) {
+
+                        Toast.makeText(
+                            context,
+                            "Fehler: ${e.message}",
+                            Toast.LENGTH_LONG
+                        ).show()
                     }
                 }
             }
             .setNegativeButton("Abbrechen", null)
             .show()
     }
+
+
+
+    private fun saveItemToCloud(item: ShoppingItem) {
+
+        val context = requireContext().applicationContext
+
+        if (authRepository.getCurrentUserId() != item.userId) {
+            return
+        }
+
+        val cloudId = CloudIdProvider.getId(
+            context,
+            item.id
+        )
+
+        cloudRepository.saveItem(
+            cloudId,
+            item
+        ) { success, message ->
+
+            if (!success) {
+                android.util.Log.e(
+                    "FoodLoopCloud",
+                    message
+                )
+            }
+        }
+    }
+
+    private fun deleteItemFromCloud(item: ShoppingItem) {
+
+        val context = requireContext().applicationContext
+
+        if (authRepository.getCurrentUserId() != item.userId) {
+            return
+        }
+
+        val cloudId = CloudIdProvider.getId(
+            context,
+            item.id
+        )
+
+        cloudRepository.deleteItem(
+            cloudId
+        ) { success, message ->
+
+            if (!success) {
+                android.util.Log.e(
+                    "FoodLoopCloud",
+                    message
+                )
+            }
+        }
+    }
+
 }

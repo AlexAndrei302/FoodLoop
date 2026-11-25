@@ -1,6 +1,6 @@
-
 package com.example.foodloop.database
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -22,5 +22,8 @@ data class Food(
 
     val expirationDate: String,
 
-    val photoPath: String? = null
+    val photoPath: String? = null,
+
+    @ColumnInfo(defaultValue = "''")
+    val userId: String
 )

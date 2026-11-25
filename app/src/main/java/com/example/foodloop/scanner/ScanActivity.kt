@@ -1,4 +1,3 @@
-
 package com.example.foodloop.scanner
 
 import android.Manifest
@@ -12,6 +11,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -39,6 +39,13 @@ class ScanActivity : AppCompatActivity() {
     private var cameraProvider: ProcessCameraProvider? = null
     private var currentPhoto: File? = null
 
+    private val textRecognitionHelper by lazy {
+        TextRecognitionHelper()
+    }
+
+    private var isProcessing = false
+    private var recognizerUsed = false
+
     private val cameraPermissionLauncher =
         registerForActivityResult(
             ActivityResultContracts.RequestPermission()
@@ -58,8 +65,8 @@ class ScanActivity : AppCompatActivity() {
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
 
+        super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_scan)
 
         previewView = findViewById(R.id.camera_preview)
@@ -101,8 +108,11 @@ class ScanActivity : AppCompatActivity() {
                 Manifest.permission.CAMERA
             ) == PackageManager.PERMISSION_GRANTED
         ) {
+
             startCamera()
+
         } else {
+
             cameraPermissionLauncher.launch(
                 Manifest.permission.CAMERA
             )
@@ -125,6 +135,7 @@ class ScanActivity : AppCompatActivity() {
             try {
 
                 val provider = cameraProviderFuture.get()
+
                 cameraProvider = provider
 
                 val preview = Preview.Builder()
@@ -150,10 +161,10 @@ class ScanActivity : AppCompatActivity() {
                 imageCapture = capture
                 captureButton.isEnabled = true
 
-            } catch (e: Exception) {
+            } catch (exception: Exception) {
 
                 scanResult.text =
-                    "Kamerafehler: ${e.message}"
+                    "Kamerafehler: ${exception.message}"
             }
 
         }, ContextCompat.getMainExecutor(this))
@@ -186,6 +197,7 @@ class ScanActivity : AppCompatActivity() {
                 override fun onImageSaved(
                     output: ImageCapture.OutputFileResults
                 ) {
+
                     if (isFinishing || isDestroyed) {
                         photoFile.delete()
                         return
@@ -197,6 +209,7 @@ class ScanActivity : AppCompatActivity() {
                 override fun onError(
                     exception: ImageCaptureException
                 ) {
+
                     photoFile.delete()
                     currentPhoto = null
 
@@ -226,11 +239,20 @@ class ScanActivity : AppCompatActivity() {
         confirmButton.visibility = View.VISIBLE
         retakeButton.visibility = View.VISIBLE
 
+        confirmButton.isEnabled = true
+        retakeButton.isEnabled = true
+
         scanTitle.text = "Foto überprüfen"
-        scanResult.text = "Ist das Foto in Ordnung?"
+
+        scanResult.text =
+            "Ist das Foto in Ordnung?"
     }
 
     private fun retakePhoto() {
+
+        if (isProcessing) {
+            return
+        }
 
         photoPreview.setImageDrawable(null)
 
@@ -256,8 +278,142 @@ class ScanActivity : AppCompatActivity() {
 
         val photo = currentPhoto ?: return
 
+        if (isProcessing) {
+            return
+        }
+
         if (!photo.exists()) {
+
             scanResult.text = "Foto nicht gefunden"
+
+            return
+        }
+
+        isProcessing = true
+
+        confirmButton.isEnabled = false
+        retakeButton.isEnabled = false
+
+        scanTitle.text = "Foto wird analysiert"
+
+        scanResult.text =
+            "Text und Ablaufdatum werden erkannt..."
+
+        recognizerUsed = true
+
+        textRecognitionHelper.recognizeText(
+
+            context = this,
+
+            photoPath = photo.absolutePath,
+
+            onSuccess = { recognizedText ->
+
+                if (!isFinishing && !isDestroyed) {
+
+                    isProcessing = false
+
+                    val expirationDate =
+                        ExpirationDateParser
+                            .findExpirationDate(recognizedText)
+
+                    showRecognitionResult(
+                        recognizedText,
+                        expirationDate
+                    )
+                }
+            },
+
+            onFailure = { exception ->
+
+                if (!isFinishing && !isDestroyed) {
+
+                    isProcessing = false
+
+                    scanResult.text =
+                        "Texterkennung fehlgeschlagen"
+
+                    showRecognitionResult(
+                        "",
+                        null
+                    )
+                }
+            }
+        )
+    }
+
+    private fun showRecognitionResult(
+        recognizedText: String,
+        expirationDate: String?
+    ) {
+
+        scanTitle.text = "Scan-Ergebnis"
+
+        confirmButton.isEnabled = true
+        retakeButton.isEnabled = true
+
+        scanResult.text = if (expirationDate != null) {
+
+            "Mögliches Ablaufdatum: $expirationDate"
+
+        } else {
+
+            "Kein eindeutiges Ablaufdatum erkannt"
+        }
+
+        val message = if (expirationDate != null) {
+
+            "Mögliches Ablaufdatum:\n" +
+                    "$expirationDate\n\n" +
+                    "Erkannter Text:\n" +
+                    recognizedText.take(2000)
+
+        } else {
+
+            "Es wurde kein eindeutiges Ablaufdatum erkannt.\n" +
+                    "Du kannst das Datum manuell eingeben.\n\n" +
+                    "Erkannter Text:\n" +
+                    recognizedText.take(2000)
+        }
+
+        AlertDialog.Builder(this)
+
+            .setTitle("Texterkennung")
+
+            .setMessage(message)
+
+            .setPositiveButton("Weiter") { _, _ ->
+
+                returnPhotoResult(
+                    recognizedText,
+                    expirationDate
+                )
+            }
+
+            .setNegativeButton("Neues Foto") { _, _ ->
+
+                retakePhoto()
+            }
+
+            .setNeutralButton("Ohne Datum") { _, _ ->
+
+                returnPhotoResult(
+                    recognizedText,
+                    null
+                )
+            }
+
+            .show()
+    }
+
+    private fun returnPhotoResult(
+        recognizedText: String,
+        expirationDate: String?
+    ) {
+
+        val photo = currentPhoto ?: return
+
+        if (!photo.exists()) {
             return
         }
 
@@ -268,14 +424,31 @@ class ScanActivity : AppCompatActivity() {
             photo.absolutePath
         )
 
+        resultIntent.putExtra(
+            "recognizedText",
+            recognizedText.take(10000)
+        )
+
+        resultIntent.putExtra(
+            "expirationDate",
+            expirationDate
+        )
+
         currentPhoto = null
 
-        setResult(RESULT_OK, resultIntent)
+        setResult(
+            RESULT_OK,
+            resultIntent
+        )
 
         finish()
     }
 
     override fun onDestroy() {
+
+        if (recognizerUsed) {
+            textRecognitionHelper.close()
+        }
 
         currentPhoto?.delete()
 
