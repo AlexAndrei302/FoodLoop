@@ -20,5 +20,7 @@ data class Food(
 
     val location: String,
 
-    val expirationDate: String
+    val expirationDate: String,
+
+    val photoPath: String? = null
 )

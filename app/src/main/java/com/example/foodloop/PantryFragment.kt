@@ -23,14 +23,39 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import android.content.Intent
 import com.example.foodloop.scanner.ScanActivity
+import android.app.Activity
+import android.net.Uri
+import android.widget.ImageView
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import kotlinx.coroutines.flow.first
+import java.io.File
+import java.util.UUID
 
 class PantryFragment : Fragment(R.layout.fragment_pantry) {
 
     private lateinit var foodList: LinearLayout
 
+    private val scanLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) { result ->
+
+            if (result.resultCode == Activity.RESULT_OK) {
+
+                val photoPath =
+                    result.data?.getStringExtra("photoPath")
+
+                if (photoPath != null) {
+                    showProductSelectionDialog(photoPath)
+                }
+            }
+        }
+
     private val foodDao by lazy {
         FoodDatabase.getDatabase(requireContext()).foodDao()
     }
+
 
 
     override fun onViewCreated(
@@ -58,7 +83,7 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
                 ScanActivity::class.java
             )
 
-            startActivity(intent)
+            scanLauncher.launch(intent)
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -72,6 +97,7 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
             }
         }
     }
+
 
 
     private fun displayFoods(foods: List<Food>) {
@@ -118,16 +144,57 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
                 deleteFood(food)
             }
 
+            val photoPath = food.photoPath
+
+            if (photoPath != null && File(photoPath).exists()) {
+
+                val imageView = ImageView(requireContext())
+
+                imageView.layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        (200 * resources.displayMetrics.density).toInt()
+                    )
+
+                imageView.scaleType =
+                    ImageView.ScaleType.FIT_CENTER
+
+                imageView.setImageURI(
+                    Uri.fromFile(File(photoPath))
+                )
+
+                imageView.setOnClickListener {
+                    showFullPhoto(photoPath)
+                }
+
+                item.addView(imageView)
+            }
+
+
             item.addView(nameText)
             item.addView(infoText)
             item.addView(editButton)
+            if (food.photoPath != null) {
+
+                val removePhotoButton = Button(requireContext())
+
+                removePhotoButton.text = "Foto entfernen"
+
+                removePhotoButton.setOnClickListener {
+                    removeFoodPhoto(food)
+                }
+
+                item.addView(removePhotoButton)
+            }
             item.addView(deleteButton)
 
             foodList.addView(item)
         }
     }
 
-    private fun showFoodDialog(food: Food? = null) {
+    private fun showFoodDialog(
+        food: Food? = null,
+        photoPath: String? = null) {
 
         val context = requireContext()
 
@@ -164,6 +231,29 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
         dateInput.hint = "Ablaufdatum (YYYY-MM-DD)"
         dateInput.setText(food?.expirationDate ?: "")
 
+        val displayedPhoto = photoPath ?: food?.photoPath
+
+        if (displayedPhoto != null &&
+            File(displayedPhoto).exists()
+        ) {
+
+            val imageView = ImageView(context)
+
+            imageView.layoutParams =
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    (200 * resources.displayMetrics.density).toInt()
+                )
+
+            imageView.scaleType = ImageView.ScaleType.FIT_CENTER
+
+            imageView.setImageURI(
+                Uri.fromFile(File(displayedPhoto))
+            )
+
+            form.addView(imageView)
+        }
+
         form.addView(nameInput)
         form.addView(quantityInput)
         form.addView(unitInput)
@@ -183,8 +273,16 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
             )
             .setView(scrollView)
             .setPositiveButton("Speichern", null)
-            .setNegativeButton("Abbrechen", null)
-            .create()
+            .setNegativeButton("Abbrechen") { _, _ ->
+                photoPath?.let {
+                    File(it).delete()
+                }
+            }
+            .setOnCancelListener {
+                photoPath?.let {
+                    File(it).delete()
+                }
+            }            .create()
 
         dialog.setOnShowListener {
 
@@ -222,27 +320,88 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
                     dateInput.error = "Datum: YYYY-MM-DD"
                 } else {
 
-                    val newFood = Food(
-                        id = food?.id ?: 0,
-                        name = name,
-                        quantity = quantity,
-                        unit = unit,
-                        category = category,
-                        location = location,
-                        expirationDate = date
-                    )
+
+                    val directory = context.filesDir
+
+                    dialog.getButton(
+                        AlertDialog.BUTTON_POSITIVE
+                    ).isEnabled = false
 
                     viewLifecycleOwner.lifecycleScope.launch {
-                        withContext(Dispatchers.IO) {
-                            if (food == null) {
-                                foodDao.insert(newFood)
-                            } else {
-                                foodDao.update(newFood)
+
+                        try {
+
+                            withContext(Dispatchers.IO) {
+
+                                val savedPhotoPath =
+                                    if (photoPath != null) {
+
+                                        savePhotoPermanently(
+                                            photoPath,
+                                            directory
+                                        )
+
+                                    } else {
+                                        food?.photoPath
+                                    }
+
+                                val newFood = Food(
+                                    id = food?.id ?: 0,
+                                    name = name,
+                                    quantity = quantity,
+                                    unit = unit,
+                                    category = category,
+                                    location = location,
+                                    expirationDate = date,
+                                    photoPath = savedPhotoPath
+                                )
+
+                                try {
+
+                                    if (food == null) {
+                                        foodDao.insert(newFood)
+                                    } else {
+                                        foodDao.update(newFood)
+                                    }
+
+                                } catch (e: Exception) {
+
+                                    if (photoPath != null) {
+                                        savedPhotoPath?.let {
+                                            File(it).delete()
+                                        }
+                                    }
+
+                                    throw e
+                                }
+
+                                if (photoPath != null) {
+                                    File(photoPath).delete()
+
+                                    food?.photoPath?.let {
+                                        File(it).delete()
+                                    }
+                                }
                             }
+
+                            dialog.dismiss()
+
+                        } catch (e: kotlinx.coroutines.CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+
+                            dialog.getButton(
+                                AlertDialog.BUTTON_POSITIVE
+                            ).isEnabled = true
+
+                            Toast.makeText(
+                                context,
+                                "Fehler beim Speichern",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
                     }
 
-                    dialog.dismiss()
                 }
             }
         }
@@ -259,11 +418,212 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
 
                 viewLifecycleOwner.lifecycleScope.launch {
                     withContext(Dispatchers.IO) {
-                        foodDao.delete(food)
+                        val currentFood = foodDao.getFoodById(food.id)
+
+                        if (currentFood != null) {
+
+                            foodDao.delete(currentFood)
+
+                            currentFood.photoPath?.let {
+                                File(it).delete()
+                            }
+                        }
                     }
                 }
             }
             .setNegativeButton("Abbrechen", null)
             .show()
     }
+
+
+    private fun showProductSelectionDialog(
+        photoPath: String
+    ) {
+
+        viewLifecycleOwner.lifecycleScope.launch {
+
+            val foods = foodDao.getAllFoods().first()
+
+            val options = foods.map { food ->
+                "${food.name} - ${food.quantity} ${food.unit} (#${food.id})"
+            }.toMutableList()
+
+            options.add("+ Neues Lebensmittel")
+
+            AlertDialog.Builder(requireContext())
+                .setTitle("Produkt auswählen")
+                .setItems(options.toTypedArray()) { _, position ->
+
+                    if (position == foods.size) {
+
+                        showFoodDialog(
+                            photoPath = photoPath
+                        )
+
+                    } else {
+
+                        savePhotoToProduct(
+                            foods[position],
+                            photoPath
+                        )
+                    }
+                }
+                .setNegativeButton("Abbrechen") { _, _ ->
+                    File(photoPath).delete()
+                }
+                .setOnCancelListener {
+                    File(photoPath).delete()
+                }
+                .show()
+        }
+    }
+
+
+    private fun savePhotoPermanently(
+        photoPath: String,
+        directory: File
+    ): String {
+
+        val photoDirectory = File(
+            directory,
+            "food_photos"
+        )
+
+        photoDirectory.mkdirs()
+
+        val destination = File(
+            photoDirectory,
+            "food_${UUID.randomUUID()}.jpg"
+        )
+
+        try {
+            File(photoPath).copyTo(destination)
+        } catch (e: Exception) {
+            destination.delete()
+            throw e
+        }
+
+        return destination.absolutePath
+    }
+
+
+    private fun savePhotoToProduct(
+        food: Food,
+        photoPath: String
+    ) {
+
+        val directory = requireContext().filesDir
+
+        viewLifecycleOwner.lifecycleScope.launch {
+
+            try {
+
+                withContext(Dispatchers.IO) {
+
+                    val currentFood =
+                        foodDao.getFoodById(food.id)
+                            ?: error("Produkt nicht gefunden")
+
+                    val savedPath = savePhotoPermanently(
+                        photoPath,
+                        directory
+                    )
+
+                    try {
+
+                        val updatedFood = currentFood.copy(
+                            photoPath = savedPath
+                        )
+
+                        foodDao.update(updatedFood)
+
+                    } catch (e: Exception) {
+
+                        File(savedPath).delete()
+                        throw e
+                    }
+
+                    currentFood.photoPath?.let {
+                        File(it).delete()
+                    }
+
+                    File(photoPath).delete()
+                }
+
+                Toast.makeText(
+                    requireContext(),
+                    "Foto erfolgreich gespeichert",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+
+                Toast.makeText(
+                    requireContext(),
+                    "Fehler beim Speichern",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
+
+    private fun showFullPhoto(photoPath: String) {
+
+        val imageView = ImageView(requireContext())
+
+        imageView.adjustViewBounds = true
+
+        imageView.scaleType =
+            ImageView.ScaleType.FIT_CENTER
+
+        imageView.setImageURI(
+            Uri.fromFile(File(photoPath))
+        )
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("Produktfotografie")
+            .setView(imageView)
+            .setPositiveButton("Schließen", null)
+            .show()
+    }
+
+
+    private fun removeFoodPhoto(food: Food) {
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("Foto entfernen")
+            .setMessage("Möchtest du das Foto entfernen?")
+            .setPositiveButton("Entfernen") { _, _ ->
+
+                viewLifecycleOwner.lifecycleScope.launch {
+
+                    withContext(Dispatchers.IO) {
+
+                        val currentFood =
+                            foodDao.getFoodById(food.id)
+
+                        if (currentFood != null) {
+
+                            foodDao.update(
+                                currentFood.copy(
+                                    photoPath = null
+                                )
+                            )
+
+                            currentFood.photoPath?.let {
+                                File(it).delete()
+                            }
+                        }
+                    }
+                }
+            }
+            .setNegativeButton("Abbrechen", null)
+            .show()
+    }
+
+
+
 }
