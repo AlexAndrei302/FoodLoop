@@ -44,7 +44,7 @@ import android.widget.ArrayAdapter
 import android.widget.Spinner
 import androidx.core.widget.doAfterTextChanged
 import java.util.Calendar
-
+import androidx.core.content.ContextCompat
 
 
 class PantryFragment : Fragment(R.layout.fragment_pantry) {
@@ -555,7 +555,7 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
             emptyText.gravity = android.view.Gravity.CENTER
 
             emptyText.setTextColor(
-                Color.parseColor("#757575")
+                themeColor(R.color.foodloop_text_secondary)
             )
 
             emptyText.setPadding(
@@ -589,13 +589,14 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
 
             val background = GradientDrawable()
 
-            background.setColor(Color.WHITE)
-
+            background.setColor(
+                themeColor(R.color.foodloop_surface)
+            )
             background.cornerRadius = dp(12).toFloat()
 
             background.setStroke(
                 dp(1),
-                Color.parseColor("#DDE8DD")
+                themeColor(R.color.foodloop_border)
             )
 
             item.background = background
@@ -674,7 +675,7 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
                     GradientDrawable()
 
                 placeholderBackground.setColor(
-                    Color.parseColor("#E8F5E9")
+                    themeColor(R.color.foodloop_primary_light)
                 )
 
                 placeholderBackground.cornerRadius =
@@ -712,7 +713,7 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
             )
 
             nameText.setTextColor(
-                Color.parseColor("#212121")
+                themeColor(R.color.foodloop_text_primary)
             )
 
             nameText.maxLines = 1
@@ -728,7 +729,7 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
             quantityText.textSize = 13f
 
             quantityText.setTextColor(
-                Color.parseColor("#757575")
+                themeColor(R.color.foodloop_text_secondary)
             )
 
             quantityText.maxLines = 1
@@ -753,7 +754,7 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
                         "Abgelaufen · ${food.expirationDate}"
 
                     statusText.setTextColor(
-                        Color.parseColor("#C62828")
+                        themeColor(R.color.foodloop_error)
                     )
                 }
 
@@ -762,7 +763,7 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
                     statusText.text = "Läuft heute ab!"
 
                     statusText.setTextColor(
-                        Color.parseColor("#EF6C00")
+                        themeColor(R.color.foodloop_warning)
                     )
                 }
 
@@ -772,7 +773,7 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
                         "Bald · ${food.expirationDate}"
 
                     statusText.setTextColor(
-                        Color.parseColor("#EF6C00")
+                        themeColor(R.color.foodloop_warning)
                     )
                 }
 
@@ -782,7 +783,7 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
                         "Haltbar · ${food.expirationDate}"
 
                     statusText.setTextColor(
-                        Color.parseColor("#2E7D32")
+                        themeColor(R.color.foodloop_primary)
                     )
                 }
             }
@@ -807,7 +808,7 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
                 android.view.Gravity.CENTER
 
             detailsButton.setTextColor(
-                Color.parseColor("#616161")
+                themeColor(R.color.foodloop_text_secondary)
             )
 
             detailsButton.layoutParams =
@@ -1462,4 +1463,10 @@ class PantryFragment : Fragment(R.layout.fragment_pantry) {
                 ).toInt()
     }
 
+    private fun themeColor(colorId: Int): Int {
+        return ContextCompat.getColor(
+            requireContext(),
+            colorId
+        )
+    }
 }

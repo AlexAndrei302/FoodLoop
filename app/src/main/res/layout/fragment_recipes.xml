@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#F5F9F5"
+    android:background="@color/foodloop_background"
     android:padding="16dp">
 
     <TextView
@@ -14,16 +14,16 @@
         android:text="Meine Rezepte"
         android:textSize="26sp"
         android:textStyle="bold"
-        android:textColor="#2E7D32" />
+        android:textColor="@color/foodloop_primary" />
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Empfehlungen basierend auf deinem Vorrat"
         android:textSize="15sp"
-        android:textColor="#666666"
+        android:textColor="@color/foodloop_text_secondary"
         android:layout_marginTop="6dp"
-        android:layout_marginBottom="16dp" />
+        android:layout_marginBottom="16dp"/>
 
     <ScrollView
         android:layout_width="match_parent"

@@ -24,7 +24,7 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
-
+import androidx.core.content.ContextCompat
 class RecipesFragment : Fragment(R.layout.fragment_recipes) {
 
     private lateinit var recipeList: LinearLayout
@@ -218,13 +218,14 @@ class RecipesFragment : Fragment(R.layout.fragment_recipes) {
 
         val background = GradientDrawable()
 
-        background.setColor(Color.WHITE)
-
+        background.setColor(
+            themeColor(R.color.foodloop_surface)
+        )
         background.cornerRadius = dp(16).toFloat()
 
         background.setStroke(
             dp(1),
-            Color.parseColor("#DDE8DD")
+            themeColor(R.color.foodloop_border)
         )
 
         card.background = background
@@ -247,7 +248,7 @@ class RecipesFragment : Fragment(R.layout.fragment_recipes) {
         title.setTypeface(null, Typeface.BOLD)
 
         title.setTextColor(
-            Color.parseColor("#2E7D32")
+            themeColor(R.color.foodloop_primary)
         )
 
         card.addView(title)
@@ -258,7 +259,9 @@ class RecipesFragment : Fragment(R.layout.fragment_recipes) {
             "Zubereitungszeit: " +
                     "${recommendation.recipe.preparationTime} Min."
 
-        time.textSize = 14f
+        time.setTextColor(
+    themeColor(R.color.foodloop_text_secondary)
+)
 
         card.addView(time)
 
@@ -270,7 +273,7 @@ class RecipesFragment : Fragment(R.layout.fragment_recipes) {
         percentage.textSize = 16f
 
         percentage.setTextColor(
-            Color.parseColor("#2E7D32")
+            themeColor(R.color.foodloop_primary)
         )
 
         percentage.setPadding(0, dp(10), 0, 0)
@@ -290,7 +293,7 @@ class RecipesFragment : Fragment(R.layout.fragment_recipes) {
 
         progressBar.progressTintList =
             ColorStateList.valueOf(
-                Color.parseColor("#388E3C")
+                themeColor(R.color.foodloop_primary)
             )
 
         card.addView(
@@ -310,7 +313,7 @@ class RecipesFragment : Fragment(R.layout.fragment_recipes) {
                         .ifEmpty { "Keine Zutaten" }
 
         available.setTextColor(
-            Color.parseColor("#2E7D32")
+            themeColor(R.color.foodloop_primary)
         )
 
         available.setPadding(0, dp(8), 0, 0)
@@ -326,7 +329,7 @@ class RecipesFragment : Fragment(R.layout.fragment_recipes) {
                         .ifEmpty { "Keine" }
 
         missing.setTextColor(
-            Color.parseColor("#B45309")
+            themeColor(R.color.foodloop_warning)
         )
 
         card.addView(missing)
@@ -340,7 +343,7 @@ class RecipesFragment : Fragment(R.layout.fragment_recipes) {
                         recommendation.expiring.joinToString(", ")
 
             warning.setTextColor(
-                Color.parseColor("#D97706")
+                themeColor(R.color.foodloop_warning)
             )
 
             warning.setTypeface(null, Typeface.BOLD)
@@ -356,10 +359,12 @@ class RecipesFragment : Fragment(R.layout.fragment_recipes) {
 
         button.backgroundTintList =
             ColorStateList.valueOf(
-                Color.parseColor("#2E7D32")
+                themeColor(R.color.foodloop_primary)
             )
 
-        button.setTextColor(Color.WHITE)
+        button.setTextColor(
+    themeColor(R.color.foodloop_on_primary)
+)
 
         button.setOnClickListener {
 
@@ -403,5 +408,12 @@ class RecipesFragment : Fragment(R.layout.fragment_recipes) {
         return (
                 value * resources.displayMetrics.density
                 ).toInt()
+    }
+
+    private fun themeColor(colorId: Int): Int {
+        return ContextCompat.getColor(
+            requireContext(),
+            colorId
+        )
     }
 }

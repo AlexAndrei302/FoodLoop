@@ -252,8 +252,9 @@
             android:layout_marginStart="8dp"
             android:text="+ Hinzufügen"
             android:textAllCaps="false"
-            android:textColor="@color/white"
-            android:backgroundTint="@color/foodloop_primary"/>
+            android:textStyle="bold"
+            android:textColor="@color/foodloop_on_primary"
+            android:backgroundTint="@color/foodloop_secondary"/>
 
     </LinearLayout>
 

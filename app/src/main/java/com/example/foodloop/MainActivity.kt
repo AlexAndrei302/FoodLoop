@@ -25,6 +25,7 @@ import com.example.foodloop.notifications.NotificationScheduler
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
+import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class MainActivity : AppCompatActivity() {
 
@@ -63,23 +64,45 @@ class MainActivity : AppCompatActivity() {
             openFragment(PantryFragment())
         }
 
-        findViewById<Button>(R.id.btn_pantry)
-            .setOnClickListener {
 
-                openFragment(PantryFragment())
+        val bottomNavigation =
+            findViewById<BottomNavigationView>(
+                R.id.bottom_navigation
+            )
+
+        bottomNavigation.setOnItemSelectedListener { item ->
+
+            when (item.itemId) {
+
+                R.id.btn_pantry -> {
+
+                    openFragment(PantryFragment())
+
+                    true
+                }
+
+                R.id.btn_recipes -> {
+
+                    openFragment(RecipesFragment())
+
+                    true
+                }
+
+                R.id.btn_shopping -> {
+
+                    openFragment(ShoppingListFragment())
+
+                    true
+                }
+
+                else -> false
             }
+        }
 
-        findViewById<Button>(R.id.btn_recipes)
-            .setOnClickListener {
+        bottomNavigation.setOnItemReselectedListener {
+            // Nu reîncărcăm fragmentul deja deschis.
+        }
 
-                openFragment(RecipesFragment())
-            }
-
-        findViewById<Button>(R.id.btn_shopping)
-            .setOnClickListener {
-
-                openFragment(ShoppingListFragment())
-            }
 
         findViewById<ImageButton>(R.id.btn_profile)
             .setOnClickListener {

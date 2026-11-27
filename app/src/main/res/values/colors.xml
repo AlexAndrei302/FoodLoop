@@ -4,22 +4,61 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 
-    <color name="foodloop_primary">#2E7D32</color>
-    <color name="foodloop_primary_dark">#1B5E20</color>
-    <color name="foodloop_primary_light">#E8F5E9</color>
+    <!-- PREMIUM FOREST -->
 
-    <color name="foodloop_background">#F5F9F5</color>
-    <color name="foodloop_surface">#FFFFFF</color>
+    <color name="foodloop_background">#14221B</color>
+    <color name="foodloop_surface">#20332A</color>
+    <color name="foodloop_surface_variant">#2A4033</color>
+    <color name="foodloop_container">#354B3D</color>
+    <color name="foodloop_border">#405548</color>
 
-    <color name="foodloop_text">#212121</color>
-    <color name="foodloop_text_secondary">#757575</color>
-    <color name="foodloop_border">#DDE8DD</color>
+    <!-- PRIMARY -->
 
-    <color name="foodloop_warning">#EF6C00</color>
-    <color name="foodloop_error">#C62828</color>
-    <color name="foodloop_success">#2E7D32</color>
+    <color name="foodloop_primary">#BCE78C</color>
+    <color name="foodloop_primary_dark">#14221B</color>
+    <color name="foodloop_primary_light">#354B3D</color>
+    <color name="foodloop_on_primary">#14221B</color>
 
-    <color name="foodloop_warning_light">#FFF3E0</color>
-    <color name="foodloop_error_light">#FFEBEE</color>
+    <!-- SECONDARY -->
+
+    <color name="foodloop_secondary">#E8C99A</color>
+    <color name="foodloop_secondary_light">#40392D</color>
+    <color name="foodloop_accent">#E8C99A</color>
+
+    <!-- TEXT -->
+
+    <color name="foodloop_text">#F3F4EA</color>
+    <color name="foodloop_text_primary">#F3F4EA</color>
+    <color name="foodloop_text_secondary">#A4B5A8</color>
+    <color name="foodloop_text_muted">#84998B</color>
+
+    <!-- SUCCESS -->
+
+    <color name="foodloop_success">#BCE78C</color>
+    <color name="foodloop_success_light">#304A35</color>
+
+    <!-- WARNING -->
+
+    <color name="foodloop_warning">#E9B86C</color>
+    <color name="foodloop_warning_light">#403525</color>
+
+    <!-- ERROR -->
+
+    <color name="foodloop_error">#F28B82</color>
+    <color name="foodloop_error_light">#402B2B</color>
+
+    <!-- ICONS -->
+
+    <color name="foodloop_icon">#BCE78C</color>
+    <color name="foodloop_icon_inactive">#A4B5A8</color>
+
+    <!-- NAVIGATION -->
+
+    <color name="foodloop_navigation">#20332A</color>
+    <color name="foodloop_navigation_active">#354B3D</color>
+
+    <!-- ADDITIONAL COLORS -->
+
+    <color name="foodloop_blue">#9EC9E7</color>
 
 </resources>
